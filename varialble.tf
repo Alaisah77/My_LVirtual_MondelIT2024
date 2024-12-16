@@ -39,3 +39,8 @@ variable "application_port" {
   type        = number
   default     = 8883
 }
+
+variable "endpoint" {
+  description = "This is the email where the cpuutilisation allerts will be sent to"
+  default     = "string"
+}

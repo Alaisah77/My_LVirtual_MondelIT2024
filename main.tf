@@ -19,7 +19,7 @@ resource "aws_security_group" "instance_sg" {
     from_port   = 8883
     to_port     = 8883
     protocol    = "tcp"
-    source_security_group_id = aws_security_group.alb_sg.id
+    #source_security_group_id = aws_security_group.alb_sg.id
   }
 
   ingress {
@@ -98,6 +98,7 @@ resource "aws_instance" "redhat_instance" {
   iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
   vpc_security_group_ids      = [aws_security_group.instance_sg.id]
   associate_public_ip_address = true
+  monitoring                  = true
 
   user_data = <<-EOF
               #!/bin/bash
@@ -109,7 +110,7 @@ resource "aws_instance" "redhat_instance" {
               EOF
 
   tags = {
-    Name = "SaaSInstance"
+    Name = "Modelize_Analyser"
   }
 }
 
@@ -119,3 +120,33 @@ resource "aws_eip" "elastic_ip" {
 
 }
 
+
+resource "aws_cloudwatch_metric_alarm" "my_cpu_alarm" {
+  alarm_name          = "HighCPUUtilization"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "This alarm triggers if CPU utilization exceeds 80% for 5 minutes"
+  dimensions = {
+    InstanceId = aws_instance.redhat_instance.id
+  }
+  actions_enabled = true
+
+  alarm_actions = [
+    "arn:aws:sns:us-east-1:123456789012:my-sns-topic"
+  ]
+}
+
+resource "aws_sns_topic" "alarm_topic" {
+  name = "alarm-topic"
+}
+
+resource "aws_sns_topic_subscription" "email_subscription" {
+  topic_arn = aws_sns_topic.alarm_topic.arn
+  protocol  = "email"
+  endpoint  = var.endpoint
+}
