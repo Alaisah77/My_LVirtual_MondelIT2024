@@ -19,11 +19,11 @@ variable "subnet_id" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.medium"
 }
 
 variable "key_pair_name" {
-  description = "Name of the existing key pair"
+  description = "Name of the existing key pair for RDP access"
   type        = string
   default     = "saastest"
 }
@@ -31,7 +31,7 @@ variable "key_pair_name" {
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket containing the ModelizeIT Analyzer"
   type        = string
-  default     = "ankeambomalaisahmbom2024"
+  #default     = "ankeambomalaisahmbom2024 sas-sandbox-staging"
 }
 
 variable "application_port" {
@@ -43,4 +43,15 @@ variable "application_port" {
 variable "endpoint" {
   description = "This is the email where the cpuutilisation allerts will be sent to"
   default     = "string"
+}
+
+variable "destination_directory" {
+  description = "EC2 instance distanation where Gatherer will be installed"
+  type        = string
+  default     = "C:\\ModelizeIT"
+}
+
+variable "s3_object_key" {
+  description = "Key of the ModelizeIT Gatherer zip file in the S3 bucket"
+  type        = string
 }

@@ -1,0 +1,60 @@
+<powershell>
+    # Set execution policy to allow script running
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force
+
+    # Define the destination directory
+    $DEST_DIR = "${var.destination_directory}"
+
+    # Create the directory if it doesn't exist
+    if (-Not (Test-Path -Path $DEST_DIR)) {
+        New-Item -Path $DEST_DIR -ItemType Directory
+    }
+
+    # Install Chocolatey package manager
+    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+    # Install 7-Zip using Chocolatey
+    choco install 7zip -y
+
+    # Download and install AWS CLI
+    $InstallerPath = "$env:TEMP\\AWSCLIV2.msi"
+    Invoke-WebRequest -Uri "https://awscli.amazonaws.com/AWSCLIV2.msi" -OutFile $InstallerPath
+    Start-Process msiexec.exe -ArgumentList "/i $InstallerPath /quiet" -Wait
+    Remove-Item -Path $InstallerPath
+
+    # Download the application package from S3
+    $TempFilePath = "$env:TEMP\\ModelizeIT-Gatherer.zip"
+    aws s3 cp "s3://${var.s3_bucket_name}/${var.s3_object_key}" $TempFilePath
+
+    # Extract the application package
+    & "C:\\Program Files\\7-Zip\\7z.exe" x $TempFilePath -o$DEST_DIR
+
+    # Remove the temporary file
+    Remove-Item -Path $TempFilePath
+
+    # Navigate to the application's bin directory
+    Set-Location -Path "$DEST_DIR\\bin"
+
+    # Execute the startup scripts
+    .\\RejuvenApptor-start.ps1
+    .\\modelizeIT-start.ps1
+    .\\Gatherer-JobRunner.ps1
+    .\\Gatherer-UI.ps1
+
+    # Enable RDP access
+    Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+
+    # Allow RDP through Windows Firewall
+    Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+    # Set the Administrator password (ensure to replace 'YourSecurePassword' with a strong password)
+    $password = ConvertTo-SecureString "YourSecurePassword" -AsPlainText -Force
+    Set-LocalUser -Name "Administrator" -Password $password
+    </powershell>
+  EOF
+
+
+}
+``
+::contentReference[oaicite:0]{index=0}
+ 
